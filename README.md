@@ -35,4 +35,16 @@ Aus der bestehenden Seite übernommen: HS & Braun UG; Mainzer Str. 102, 55283 Ni
 - Öffnungszeiten und eventuell vorhandener Notdienst
 - Vollständige Inhalte für Impressum und Datenschutz vor öffentlicher Veröffentlichung; diese Seiten sind noch nicht enthalten
 
-Es wurden keine Bewertungen, Zertifizierungen, Erfahrungsjahre, Garantien, Förderversprechen oder kostenlosen Angebote erfunden. Es gibt keine extern eingebundenen Schriften, Iconbibliotheken, Karten, Trackingdienste oder Formulardienste. Google Maps wird nur über einen ausdrücklich angeklickten externen Routenlink geöffnet. Die Seite wurde nicht öffentlich veröffentlicht.
+Es wurden keine Bewertungen, Zertifizierungen, Erfahrungsjahre, Garantien, Förderversprechen oder kostenlosen Angebote erfunden. Es gibt keine extern eingebundenen Schriften, Iconbibliotheken, Karten, Trackingdienste oder Formulardienste. Google Maps wird nur über einen ausdrücklich angeklickten externen Routenlink geöffnet. Die Website wird über GitHub Pages veröffentlicht.
+
+## Automatische Veröffentlichung
+
+Jeder Push auf `main` startet den Workflow `Publish website` in
+`.github/workflows/pages.yml`. Dieser veröffentlicht ausschließlich die
+Website-Dateien (`index.html`, `.nojekyll`, `css/`, `js/`, `public/`) über
+GitHub Pages. Ein manueller Start ist ebenfalls über „Run workflow“ möglich.
+
+Die öffentliche Adresse lautet https://filmmakermudy.github.io/HSBraunUG/.
+Änderungen sind nach erfolgreichem Deployment sichtbar; ein Push allein
+bestätigt noch keine Veröffentlichung. Status und Fehler stehen im
+GitHub-Actions-Lauf des jeweiligen Commits.

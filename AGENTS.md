@@ -11,13 +11,18 @@ After completing a requested change:
 2. Stage only files belonging to the requested change. Do not include credentials,
    private files, temporary artifacts, or unrelated user work.
 3. Commit with a descriptive message and push to `origin/main` without asking
-   again for routine commit, push, or publication approval. GitHub Pages is
-   configured to publish from `main` at the repository root.
+   again for routine commit, push, or publication approval. The workflow in
+   `.github/workflows/pages.yml` automatically publishes the public
+   website to GitHub Pages on every push to `main`. It packages only `index.html`,
+   `.nojekyll`, `css/`, `js/`, and `public/`.
 4. Use a normal, non-force push. If the current branch has a different name,
    `git push origin HEAD:main` is appropriate after confirming the history is
    compatible. Fetch and preserve remote changes; never overwrite remote history.
-5. Report whether the push succeeded. Do not claim that a deployment is live
-   unless verified. If authentication, network access, conflicts, or failing checks
+5. After pushing, wait for the `Publish website` workflow for that commit to
+   complete and verify the Pages deployment succeeded. Report the public URL.
+   A successful push alone does not prove publication. Do not claim that a
+   deployment is live unless verified. If authentication, network access,
+   conflicts, or failing checks
    block publication, explain the blocker rather than claiming completion.
 
 Publish once the requested change is complete and checked, not after each partial
