@@ -11,19 +11,19 @@ After completing a requested change:
 2. Stage only files belonging to the requested change. Do not include credentials,
    private files, temporary artifacts, or unrelated user work.
 3. Commit with a descriptive message and push to `origin/main` without asking
-   again for routine commit, push, or publication approval. The workflow in
-   `.github/workflows/pages.yml` automatically publishes the public
-   website to GitHub Pages on every push to `main`. It packages only `index.html`,
-   `.nojekyll`, `css/`, `js/`, and `public/`.
+   again for routine commit, push, or publication approval. The user explicitly
+   confirmed automatic public publication on 2026-10-24. GitHub Pages publishes
+   every push from `main` at the repository root using its native workflow.
 4. Use a normal, non-force push. If the current branch has a different name,
    `git push origin HEAD:main` is appropriate after confirming the history is
    compatible. Fetch and preserve remote changes; never overwrite remote history.
-5. After pushing, wait for the `Publish website` workflow for that commit to
-   complete and verify the Pages deployment succeeded. Report the public URL.
-   A successful push alone does not prove publication. Do not claim that a
-   deployment is live unless verified. If authentication, network access,
-   conflicts, or failing checks
-   block publication, explain the blocker rather than claiming completion.
+5. After pushing, wait for the `Verify public website` workflow for that commit
+   to complete. `.github/workflows/pages.yml` checks that the public HTML, CSS,
+   JavaScript, and image files match the pushed commit, allowing for deployment
+   and cache delays. Report the public URL after successful verification.
+   A successful push alone does not prove publication. If authentication, network
+   access, conflicts, or failing checks block publication or verification,
+   explain the blocker rather than claiming completion.
 
 Publish once the requested change is complete and checked, not after each partial
 file write. This file guides coding agents; it is not a background file watcher

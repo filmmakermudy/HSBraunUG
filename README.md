@@ -39,12 +39,15 @@ Es wurden keine Bewertungen, Zertifizierungen, Erfahrungsjahre, Garantien, Förd
 
 ## Automatische Veröffentlichung
 
-Jeder Push auf `main` startet den Workflow `Publish website` in
-`.github/workflows/pages.yml`. Dieser veröffentlicht ausschließlich die
-Website-Dateien (`index.html`, `.nojekyll`, `css/`, `js/`, `public/`) über
-GitHub Pages. Ein manueller Start ist ebenfalls über „Run workflow“ möglich.
+GitHub Pages veröffentlicht jeden Push auf `main` automatisch aus dem
+Repository-Hauptverzeichnis über den eingebauten Pages-Workflow.
+
+Zusätzlich startet `Verify public website` in `.github/workflows/pages.yml`.
+Dieser prüft bis zu zwölf Minuten lang, ob die öffentlichen HTML-, CSS-,
+JavaScript- und Bilddateien dem gepushten Commit entsprechen. Er ist erst
+bei erfolgreicher Prüfung grün. Ein manueller Start ist ebenfalls über
+„Run workflow“ möglich.
 
 Die öffentliche Adresse lautet https://filmmakermudy.github.io/HSBraunUG/.
-Änderungen sind nach erfolgreichem Deployment sichtbar; ein Push allein
-bestätigt noch keine Veröffentlichung. Status und Fehler stehen im
-GitHub-Actions-Lauf des jeweiligen Commits.
+Ein Push allein bestätigt noch keine Veröffentlichung. Status und Fehler
+stehen in den GitHub-Actions-Läufen des jeweiligen Commits.

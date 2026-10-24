@@ -1,4 +1,4 @@
-name: Publish website
+name: Verify public website
 
 on:
   push:
@@ -7,42 +7,53 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: github-pages
-  cancel-in-progress: false
+  group: verify-github-pages
+  cancel-in-progress: true
 
 jobs:
-  deploy:
+  verify:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    timeout-minutes: 15
     steps:
       - name: Check out website
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
-      - name: Select GitHub Actions as the Pages source
+      # GitHub Pages publishes main automatically using its native build workflow.
+      # This check succeeds only once the public files match the pushed commit.
+      - name: Wait for public website to match this commit
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh api --method PUT "repos/$GITHUB_REPOSITORY/pages" -f build_type=workflow
-
-      - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
-
-      - name: Prepare public website files
+          SITE_URL: https://filmmakermudy.github.io/HSBraunUG/
+        shell: python
         run: |
-          mkdir _site
-          cp index.html .nojekyll _site/
-          cp -R css js public _site/
+          import os
+          import time
+          from pathlib import Path
+          from urllib.error import HTTPError, URLError
+          from urllib.parse import quote
+          from urllib.request import Request, urlopen
 
-      - name: Upload website
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-      - name: Publish website
-        id: deployment
-        uses: actions/deploy-pages@v4
+          files = [Path('index.html')]
+          for directory in ('css', 'js', 'public'):
+              files.extend(p for p in Path(directory).rglob('*') if p.is_file())
+          expected = {p: p.read_bytes() for p in files}
+          deadline = time.monotonic() + 720
+          while True:
+              try:
+                  for path, content in expected.items():
+                      url = os.environ['SITE_URL'] + quote(path.as_posix())
+                      url += '?version=' + os.environ['GITHUB_SHA']
+                      request = Request(url, headers={'Cache-Control': 'no-cache'})
+                      with urlopen(request, timeout=20) as response:
+                          if response.read() != content:
+                              raise ValueError(f'{path} still differs from this commit')
+                  print('Public website matches commit ' + os.environ['GITHUB_SHA'])
+                  with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+                      summary.write('Public website verified: ' + os.environ['SITE_URL'] + '\n')
+                  break
+              except (HTTPError, URLError, TimeoutError, ValueError) as error:
+                  print(f'Waiting for GitHub Pages: {error}', flush=True)
+                  if time.monotonic() >= deadline:
+                      raise SystemExit('Public website did not update within 12 minutes')
+                  time.sleep(10)
