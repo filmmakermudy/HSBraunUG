@@ -39,8 +39,8 @@ let serviceFrame = null;
 let lastServiceTime = null;
 let servicesVisible = !("IntersectionObserver" in window);
 let servicesFocused = false;
+let servicesHovered = false;
 let rotationPaused = false;
-let motionOptIn = false;
 
 function selectService(service, focusTab = false) {
   serviceElapsed = 0;
@@ -48,9 +48,12 @@ function selectService(service, focusTab = false) {
   services.style.setProperty("--service-progress", "0");
   tabs.forEach((tab) => {
     const selected = tab.dataset.service === service;
+    const panel = document.getElementById(tab.getAttribute("aria-controls"));
+    const entering = selected && panel.hidden;
     tab.setAttribute("aria-selected", String(selected));
     tab.tabIndex = selected ? 0 : -1;
-    document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
+    panel.hidden = !selected;
+    panel.classList.toggle("is-entering", entering);
     if (selected && focusTab) tab.focus();
   });
 }
@@ -83,13 +86,12 @@ function advanceService(time) {
 }
 
 function updateServiceRotation() {
-  const motionAllowed = !reducedMotion.matches || motionOptIn;
   const running = servicesVisible && !document.hidden &&
-    !servicesFocused && !rotationPaused && motionAllowed;
+    !servicesFocused && !servicesHovered && !rotationPaused;
   rotationToggle.hidden = false;
-  rotationToggle.textContent = !motionAllowed ? "Automatischen Wechsel starten" :
-    rotationPaused ? "Automatischen Wechsel fortsetzen" : "Automatischen Wechsel pausieren";
-  services.classList.toggle("has-service-timer", motionAllowed);
+  rotationToggle.textContent = rotationPaused ? "Weiter" : "Pause";
+  rotationToggle.setAttribute("aria-label", rotationPaused ? "Automatischen Wechsel fortsetzen" : "Automatischen Wechsel pausieren");
+  services.classList.toggle("has-service-timer", !reducedMotion.matches);
   if (running && serviceFrame === null) {
     lastServiceTime = null;
     serviceFrame = requestAnimationFrame(advanceService);
@@ -101,15 +103,19 @@ function updateServiceRotation() {
 }
 
 rotationToggle.addEventListener("click", () => {
-  if (reducedMotion.matches && !motionOptIn) {
-    motionOptIn = true;
-    rotationPaused = false;
-  } else {
-    rotationPaused = !rotationPaused;
-  }
+  rotationPaused = !rotationPaused;
   updateServiceRotation();
 });
-// Pointer selection restarts the timer; only keyboard focus pauses reading.
+services.addEventListener("pointerenter", (event) => {
+  if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+  servicesHovered = true;
+  updateServiceRotation();
+});
+services.addEventListener("pointerleave", () => {
+  servicesHovered = false;
+  updateServiceRotation();
+});
+// Pointer clicks clear keyboard pause; hover pauses until the pointer leaves.
 services.addEventListener("pointerdown", () => {
   servicesFocused = false;
   updateServiceRotation();
@@ -124,10 +130,7 @@ services.addEventListener("focusout", (event) => {
   updateServiceRotation();
 });
 document.addEventListener("visibilitychange", updateServiceRotation);
-reducedMotion.addEventListener("change", () => {
-  motionOptIn = false;
-  updateServiceRotation();
-});
+reducedMotion.addEventListener("change", updateServiceRotation);
 if ("IntersectionObserver" in window) {
   const servicesObserver = new IntersectionObserver(([entry]) => {
     servicesVisible = entry.isIntersecting;
