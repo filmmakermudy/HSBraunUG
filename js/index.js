@@ -38,9 +38,9 @@ let serviceElapsed = 0;
 let serviceFrame = null;
 let lastServiceTime = null;
 let servicesVisible = !("IntersectionObserver" in window);
-let servicesHovered = false;
 let servicesFocused = false;
 let rotationPaused = false;
+let motionOptIn = false;
 
 function selectService(service, focusTab = false) {
   serviceElapsed = 0;
@@ -83,10 +83,13 @@ function advanceService(time) {
 }
 
 function updateServiceRotation() {
-  const running = servicesVisible && !document.hidden && !servicesHovered &&
-    !servicesFocused && !rotationPaused && !reducedMotion.matches;
-  rotationToggle.hidden = reducedMotion.matches;
-  services.classList.toggle("has-service-timer", !reducedMotion.matches);
+  const motionAllowed = !reducedMotion.matches || motionOptIn;
+  const running = servicesVisible && !document.hidden &&
+    !servicesFocused && !rotationPaused && motionAllowed;
+  rotationToggle.hidden = false;
+  rotationToggle.textContent = !motionAllowed ? "Automatischen Wechsel starten" :
+    rotationPaused ? "Automatischen Wechsel fortsetzen" : "Automatischen Wechsel pausieren";
+  services.classList.toggle("has-service-timer", motionAllowed);
   if (running && serviceFrame === null) {
     lastServiceTime = null;
     serviceFrame = requestAnimationFrame(advanceService);
@@ -98,29 +101,33 @@ function updateServiceRotation() {
 }
 
 rotationToggle.addEventListener("click", () => {
-  rotationPaused = !rotationPaused;
-  rotationToggle.textContent = rotationPaused ? "Automatischen Wechsel fortsetzen" : "Automatischen Wechsel pausieren";
+  if (reducedMotion.matches && !motionOptIn) {
+    motionOptIn = true;
+    rotationPaused = false;
+  } else {
+    rotationPaused = !rotationPaused;
+  }
   updateServiceRotation();
 });
-services.addEventListener("pointerenter", (event) => {
-  if (event.pointerType !== "mouse") return;
-  servicesHovered = true;
+// Pointer selection restarts the timer; only keyboard focus pauses reading.
+services.addEventListener("pointerdown", () => {
+  servicesFocused = false;
   updateServiceRotation();
 });
-services.addEventListener("pointerleave", () => {
-  servicesHovered = false;
-  updateServiceRotation();
-});
-services.addEventListener("focusin", () => {
-  servicesFocused = true;
+services.addEventListener("focusin", (event) => {
+  servicesFocused = event.target !== rotationToggle && event.target.matches(":focus-visible");
   updateServiceRotation();
 });
 services.addEventListener("focusout", (event) => {
-  servicesFocused = services.contains(event.relatedTarget);
+  servicesFocused = services.contains(event.relatedTarget) &&
+    event.relatedTarget !== rotationToggle && event.relatedTarget.matches(":focus-visible");
   updateServiceRotation();
 });
 document.addEventListener("visibilitychange", updateServiceRotation);
-reducedMotion.addEventListener("change", updateServiceRotation);
+reducedMotion.addEventListener("change", () => {
+  motionOptIn = false;
+  updateServiceRotation();
+});
 if ("IntersectionObserver" in window) {
   const servicesObserver = new IntersectionObserver(([entry]) => {
     servicesVisible = entry.isIntersecting;
