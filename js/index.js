@@ -53,9 +53,6 @@ tabs.forEach((tab, index) => {
     }
   });
 });
-document.querySelectorAll("[data-service-link]").forEach((link) => {
-  link.addEventListener("click", () => selectService(link.dataset.serviceLink));
-});
 
 // Reflect the section currently beneath the sticky navigation.
 if ("IntersectionObserver" in window) {
