@@ -30,7 +30,22 @@ document.addEventListener("click", (event) => {
 window.matchMedia("(min-width: 851px)").addEventListener("change", closeMenu);
 
 const tabs = Array.from(document.querySelectorAll("[data-service]"));
+const services = document.querySelector(".services");
+const rotationToggle = document.querySelector(".service-rotation-toggle");
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const serviceDuration = 8000;
+let serviceElapsed = 0;
+let serviceFrame = null;
+let lastServiceTime = null;
+let servicesVisible = !("IntersectionObserver" in window);
+let servicesHovered = false;
+let servicesFocused = false;
+let rotationPaused = false;
+
 function selectService(service, focusTab = false) {
+  serviceElapsed = 0;
+  lastServiceTime = null;
+  services.style.setProperty("--service-progress", "0");
   tabs.forEach((tab) => {
     const selected = tab.dataset.service === service;
     tab.setAttribute("aria-selected", String(selected));
@@ -53,6 +68,67 @@ tabs.forEach((tab, index) => {
     }
   });
 });
+
+// The underline and the next panel share one clock, including all pauses.
+function advanceService(time) {
+  if (lastServiceTime !== null) serviceElapsed += time - lastServiceTime;
+  lastServiceTime = time;
+  if (serviceElapsed >= serviceDuration) {
+    const index = tabs.findIndex((tab) => tab.getAttribute("aria-selected") === "true");
+    selectService(tabs[(index + 1) % tabs.length].dataset.service);
+    lastServiceTime = time;
+  }
+  services.style.setProperty("--service-progress", String(serviceElapsed / serviceDuration));
+  serviceFrame = requestAnimationFrame(advanceService);
+}
+
+function updateServiceRotation() {
+  const running = servicesVisible && !document.hidden && !servicesHovered &&
+    !servicesFocused && !rotationPaused && !reducedMotion.matches;
+  rotationToggle.hidden = reducedMotion.matches;
+  services.classList.toggle("has-service-timer", !reducedMotion.matches);
+  if (running && serviceFrame === null) {
+    lastServiceTime = null;
+    serviceFrame = requestAnimationFrame(advanceService);
+  } else if (!running && serviceFrame !== null) {
+    cancelAnimationFrame(serviceFrame);
+    serviceFrame = null;
+    lastServiceTime = null;
+  }
+}
+
+rotationToggle.addEventListener("click", () => {
+  rotationPaused = !rotationPaused;
+  rotationToggle.textContent = rotationPaused ? "Automatischen Wechsel fortsetzen" : "Automatischen Wechsel pausieren";
+  updateServiceRotation();
+});
+services.addEventListener("pointerenter", (event) => {
+  if (event.pointerType !== "mouse") return;
+  servicesHovered = true;
+  updateServiceRotation();
+});
+services.addEventListener("pointerleave", () => {
+  servicesHovered = false;
+  updateServiceRotation();
+});
+services.addEventListener("focusin", () => {
+  servicesFocused = true;
+  updateServiceRotation();
+});
+services.addEventListener("focusout", (event) => {
+  servicesFocused = services.contains(event.relatedTarget);
+  updateServiceRotation();
+});
+document.addEventListener("visibilitychange", updateServiceRotation);
+reducedMotion.addEventListener("change", updateServiceRotation);
+if ("IntersectionObserver" in window) {
+  const servicesObserver = new IntersectionObserver(([entry]) => {
+    servicesVisible = entry.isIntersecting;
+    updateServiceRotation();
+  });
+  servicesObserver.observe(services);
+}
+updateServiceRotation();
 
 // Reflect the section currently beneath the sticky navigation.
 if ("IntersectionObserver" in window) {
